@@ -1,0 +1,10 @@
+{
+  "schema-version": "1.0",
+  "changes": [
+    {
+      "type": "feature",
+      "category": "general",
+      "description": "Initial version of JMESLog."
+    }
+  ]
+}
