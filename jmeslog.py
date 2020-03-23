@@ -109,6 +109,7 @@ class JMESLogEntry:
 class JMESLogEntryCollection:
     changes: List[JMESLogEntry]
     schema_version: str = '1.0'
+    summary: str = ''
 
     @property
     def version_bump_type(self) -> VersionBump:
@@ -119,10 +120,13 @@ class JMESLogEntryCollection:
         return bump_type
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        result = {
             'schema-version': '1.0',
             'changes': [entry.to_dict() for entry in self.changes]
         }
+        if self.summary:
+            result['summary'] = self.summary
+        return result
 
     @classmethod
     def from_dict(cls,
@@ -130,7 +134,8 @@ class JMESLogEntryCollection:
         collection = cls(
             schema_version=release_info['schema-version'],
             changes=[JMESLogEntry(**entry)
-                     for entry in release_info['changes']]
+                     for entry in release_info['changes']],
+            summary=release_info.get('summary', ''),
         )
         return collection
 
@@ -419,6 +424,10 @@ def render_changes(changes: Dict[str, JMESLogEntryCollection],
             f'{"=" * len(version_number)}\n'
             '\n'
         )
+        if release.summary:
+            out.write('\n')
+            out.write(release.summary)
+            out.write('\n')
         for change in release.changes:
             description = '\n  '.join(change.description.splitlines())
             out.write(

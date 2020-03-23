@@ -193,6 +193,19 @@ def test_bugfix_is_patch_version(entry_types, bump_type):
     assert changes.version_bump_type == bump_type
 
 
+def test_collection_to_dict():
+    changes = jmeslog.JMESLogEntryCollection(
+        changes=[new_change('bugfix')],
+        schema_version='1.0',
+        summary='Summary of release.',
+    )
+    assert changes.to_dict() == {
+        'schema-version': '1.0',
+        'summary': 'Summary of release.',
+        'changes': [{'type': 'bugfix', 'category': 'foo',
+                     'description': 'bar'}],
+    }
+
 def write_change(change_type, change_dir):
     entry = new_change(change_type)
     jmeslog.create_entry_recorder(entry, change_dir).write_change_file_entry()
