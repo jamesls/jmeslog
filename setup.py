@@ -8,7 +8,7 @@ with open('README.rst') as readme_file:
 
 setup(
     name='jmeslog',
-    version='0.0.1',
+    version='0.1.1',
     description="Tool for managing changelogs.",
     long_description=README,
     author="James Saryerwinnie",

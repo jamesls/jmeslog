@@ -25,7 +25,7 @@ from typing import List, Dict, Any, IO
 from distutils.version import StrictVersion
 
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 
 VALID_CHARS = set(string.ascii_letters + string.digits)

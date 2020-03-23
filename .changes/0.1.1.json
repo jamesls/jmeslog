@@ -1,0 +1,15 @@
+{
+  "schema-version": "1.0",
+  "changes": [
+    {
+      "type": "enhancement",
+      "category": "render",
+      "description": "Add support for an optional release summary."
+    },
+    {
+      "type": "enhancement",
+      "category": "CLI",
+      "description": "Add a ``--version`` option to the CLI."
+    }
+  ]
+}
