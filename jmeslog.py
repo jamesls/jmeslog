@@ -25,6 +25,9 @@ from typing import List, Dict, Any, IO
 from distutils.version import StrictVersion
 
 
+__version__ = '0.1.0'
+
+
 VALID_CHARS = set(string.ascii_letters + string.digits)
 # TODO: Dynamically generate this template based on schema values.
 # TODO: Support #123 and owner/repo#123 references
@@ -492,6 +495,7 @@ class ChangeQuery:
 
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
+    parser.add_argument('--version', action='version', version=__version__)
     parser.add_argument('--change-dir', default='.changes',
                         help='The location of the .changes directory.')
     subparser = parser.add_subparsers()
