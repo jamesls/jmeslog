@@ -33,7 +33,7 @@ DEFAULT_TEMPLATE = """\
 # feature: A larger feature or change in behavior, usually resulting in a
 #          minor version bump.
 # bugfix: Fixing a bug in an existing code path.
-# enhancment: Small change to an underlying implementation detail.
+# enhancement: Small change to an underlying implementation detail.
 # api-change: Changes to a modeled API.
 type: {type}
 
