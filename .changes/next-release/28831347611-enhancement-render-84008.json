@@ -1,0 +1,5 @@
+{
+  "type": "enhancement",
+  "category": "render",
+  "description": "Add support for an optional release summary."
+}
