@@ -284,10 +284,38 @@ def test_can_consolidate_next_release(tmpdir):
     with open(str(change_dir.join('1.1.0.json'))) as f:
         data = json.load(f)
     assert data == {
-        'schema-version': '1.0',
+        'schema-version': '0.2',
         'changes': [
             {'type': 'feature', 'category': 'foo', 'description': 'bar'},
             {'type': 'bugfix', 'category': 'foo', 'description': 'bar'},
             {'type': 'enhancement', 'category': 'foo', 'description': 'bar'},
         ]
     }
+
+
+def test_can_create_collection_from_dict():
+    release_data = {
+        'schema-version': '0.2',
+        'changes': [
+            {'type': 'feature', 'category': 'foo', 'description': 'bar'},
+        ],
+        'summary': 'Foo release.'
+    }
+    collection = jmeslog.JMESLogEntryCollection.from_dict(release_data)
+    assert collection.schema_version == '0.2'
+    assert collection.summary == 'Foo release.'
+    assert collection.changes == [jmeslog.JMESLogEntry(type='feature',
+                                                       category='foo',
+                                                       description='bar')]
+
+
+def test_can_create_collection_from_old_format():
+    release_data = [
+        {'type': 'feature', 'category': 'foo', 'description': 'bar'},
+    ]
+    collection = jmeslog.JMESLogEntryCollection.from_dict(release_data)
+    assert collection.schema_version == '0.1'
+    assert collection.summary == ''
+    assert collection.changes == [jmeslog.JMESLogEntry(type='feature',
+                                                       category='foo',
+                                                       description='bar')]

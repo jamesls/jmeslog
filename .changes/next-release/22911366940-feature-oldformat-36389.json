@@ -1,0 +1,5 @@
+{
+  "type": "feature",
+  "category": "old-format",
+  "description": "Add support for loading old jmeslog formats."
+}
