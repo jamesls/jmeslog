@@ -76,12 +76,88 @@ The typical workflow when using ``jmeslog``:
   from the next ``.changes/next-release/`` directory into a new single
   ``.changes/X.Y.Z.json`` file.
 
+Rendering Changelogs
+====================
+
+By default, the ``jmeslog render`` command renders a CHANGELOG file
+in RST format with this structure::
+
+    =========
+    CHANGELOG
+    =========
+
+    X.Y.Z
+    =====
+
+    * type:category:description
+
+You can control how your changes are rendered by specifying your own template.
+To specify your own templates, first create a ``.changes/templates``
+directory::
+
+    mkdir .changes/templates
+
+Next create any number of templates you want.  For example::
+
+    touch .changes/templates/MYTEMPLATE
+
+This name can be anything you want.  Next, you write your template.
+You can either use the built-in template engine, or you can use the
+`jinja2 <https://jinja.palletsprojects.com/>`__ engine.
+To use jinja2, you must install the Jinja2 python package.
+
+The built-in template engine is a lite version of jinja2 that doesn't require
+any additional dependencies.  It's provided as a convenience so you don't
+need to worry about installing any additional 3rd party dependencies.  However,
+if you'd like more advanced templating features, jinja2 is recommended.
+
+The template is provided the following context dictionary when rendering
+the changelog::
+
+    {
+      "changes": [
+        ("x.y.z": [{"type": "", "category": "", "description": ""}, ...]),
+        ("x.y.z - 1": [{"type": "", "category": "", "description": ""}, ...]),
+        ("x.y.z - 2": [{"type": "", "category": "", "description": ""}, ...]),
+      ]
+    }
+
+The ``changes`` list is in descender order with the most recent release being
+first, and the oldest release being the last item in the ``changes`` list.
+
+To use this template, specify the filename (the basename, not the entire
+filename) as the ``--template`` parameter.  For example, if your template
+file is ``.changes/templates/MYTEMPLATE``, you'd specify
+``jmeslog render --template MYTEMPLATE``.
+
+Here's a sample template that represents the default template::
+
+    =========
+    CHANGELOG
+    =========
+
+    {% for release, changes in releases %}
+    {{ release }}
+    {{ '=' * release|length }}
+    {% if changes.summary %}
+    {{ changes.summary -}}
+    {% endif %}
+    {% for change in changes.changes %}
+    * {{ change.type }}:{{ change.category }}:{{ change.description }}
+    {% endfor %}
+    {% endfor %}
+
+
 Backwards Compatibility
 =======================
 
-The API for JMESLog, including the CLI commands and parameters, the
-files generated and the functionality provided by JMESLog may
-change in a backwards incompatible manner until its 1.0.0 GA release.
+The following things may change in a backwards incompatible manner
+until the 1.0.0 GA release:
+
+* The CLI commands and parameters
+* The files generates under ``.changes/``
+* The functionality provided by JMESLog
+* The context dictionary provided to custom templates
 
 
 FAQ

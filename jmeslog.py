@@ -21,8 +21,14 @@ import shutil
 import time
 import enum
 from dataclasses import dataclass, asdict, field, fields
-from typing import List, Dict, Any, IO, Union
+from typing import List, Dict, Any, IO, Union, Optional
 from distutils.version import StrictVersion
+try:
+    import jinja2
+    HAS_JINJA2 = True
+except ImportError:
+    HAS_JINJA2 = False
+HAS_JINJA2 = False
 
 
 __version__ = '0.1.1'
@@ -429,12 +435,25 @@ def cmd_render(args: argparse.Namespace) -> int:
     # can use whatever format/layout they want.  But for now, I'm going
     # with a default layout.
     changes = load_all_changes(args.change_dir)
-    render_changes(changes, sys.stdout)
+    template_file = None
+    if args.template:
+        template_file = os.path.join(args.change_dir,
+                                     'templates', args.template)
+    render_changes(changes, sys.stdout, template_file, args.engine)
     return 0
 
 
 def render_changes(changes: Dict[str, JMESLogEntryCollection],
-                   out: IO[str]) -> None:
+                   out: IO[str], template_file: Optional[str],
+                   engine: str) -> None:
+    if template_file is None:
+        _render_default_template(changes, out)
+    else:
+        _render_with_template(changes, out, template_file, engine)
+
+
+def _render_default_template(changes: Dict[str, JMESLogEntryCollection],
+                             out: IO[str]) -> None:
     out.write(
         '=========\n'
         'CHANGELOG\n'
@@ -452,6 +471,30 @@ def render_changes(changes: Dict[str, JMESLogEntryCollection],
             out.write(release.summary)
             out.write('\n')
         _render_single_release_changes(release, out)
+
+
+def _render_with_template(changes: Dict[str, JMESLogEntryCollection],
+                          out: IO[str],
+                          template_file: str, engine: str) -> None:
+    if engine == 'jinja2':
+        _render_jinja2_template(changes, out, template_file)
+
+
+def _render_jinja2_template(changes: Dict[str, JMESLogEntryCollection],
+                            out: IO[str],
+                            template_file: str) -> None:
+    if not HAS_JINJA2:
+        raise RuntimeError("To use '--engine jinja2' you must have the "
+                           "Jinja2 package installed.  Otherwise you can "
+                           "use '--engine builtin'.")
+    context = {
+        'releases': reversed(list(changes.items())),
+    }
+    with open(template_file) as f:
+        template_contents = f.read()
+    template = jinja2.Template(template_contents)
+    result = template.render(**context)
+    out.write(result)
 
 
 def load_all_changes(change_dir: str) -> Dict[str, JMESLogEntryCollection]:
@@ -559,6 +602,13 @@ def create_parser() -> argparse.ArgumentParser:
                                    "release."))
 
     render = subparser.add_parser('render')
+    render.add_argument('-t', '--template',
+                        help=('The name of the template to use from the '
+                              '.changes/templates/ directory.'))
+    render.add_argument('-e', '--engine', choices=('builtin', 'jinja2'),
+                        help=('The template engine to use.  If you choose '
+                              'jinja2 you must have the Jinja2 package '
+                              'installed'))
     render.set_defaults(func=cmd_render)
 
     query = subparser.add_parser('query')
