@@ -21,7 +21,7 @@ import shutil
 import time
 import enum
 from dataclasses import dataclass, asdict, field, fields
-from typing import List, Dict, Any, IO
+from typing import List, Dict, Any, IO, Union
 from distutils.version import StrictVersion
 
 
@@ -111,8 +111,10 @@ class JMESLogEntry:
 @dataclass
 class JMESLogEntryCollection:
     changes: List[JMESLogEntry]
-    schema_version: str = '1.0'
+    schema_version: str = '0.2'
     summary: str = ''
+
+    _OLD_SCHEMA_VERSION = '0.1'
 
     @property
     def version_bump_type(self) -> VersionBump:
@@ -124,7 +126,7 @@ class JMESLogEntryCollection:
 
     def to_dict(self) -> Dict[str, Any]:
         result = {
-            'schema-version': '1.0',
+            'schema-version': self.schema_version,
             'changes': [entry.to_dict() for entry in self.changes]
         }
         if self.summary:
@@ -133,7 +135,25 @@ class JMESLogEntryCollection:
 
     @classmethod
     def from_dict(cls,
-                  release_info: Dict[str, Any]) -> 'JMESLogEntryCollection':
+                  release_info: Union[List[Any], Dict[str, Any]]
+                  ) -> 'JMESLogEntryCollection':
+        if isinstance(release_info, list):
+            return cls._load_old_format(release_info)
+        return cls._load_new_format(release_info)
+
+    @classmethod
+    def _load_old_format(cls,
+                         release_info: List[Any]) -> 'JMESLogEntryCollection':
+        collection = cls(
+            schema_version=cls._OLD_SCHEMA_VERSION,
+            changes=[JMESLogEntry(**entry) for entry in release_info],
+        )
+        return collection
+
+    @classmethod
+    def _load_new_format(cls,
+                         release_info: Dict[str, Any]
+                         ) -> 'JMESLogEntryCollection':
         collection = cls(
             schema_version=release_info['schema-version'],
             changes=[JMESLogEntry(**entry)
