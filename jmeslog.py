@@ -451,12 +451,7 @@ def render_changes(changes: Dict[str, JMESLogEntryCollection],
             out.write('\n')
             out.write(release.summary)
             out.write('\n')
-        for change in release.changes:
-            description = '\n  '.join(change.description.splitlines())
-            out.write(
-                f'* {change.type}:{change.category}:{description}\n'
-            )
-        out.write('\n\n')
+        _render_single_release_changes(release, out)
 
 
 def load_all_changes(change_dir: str) -> Dict[str, JMESLogEntryCollection]:
@@ -485,6 +480,23 @@ def cmd_query(args: argparse.Namespace) -> int:
         return 1
     print(result)
     return 0
+
+
+def cmd_pending(args: argparse.Namespace) -> int:
+    pending_changes = load_next_changes(args.change_dir)
+    sys.stdout.write('\n')
+    _render_single_release_changes(pending_changes, sys.stdout)
+    return 0
+
+
+def _render_single_release_changes(change_collection: JMESLogEntryCollection,
+                                   out: IO[str]) -> None:
+    for change in change_collection.changes:
+        description = '\n  '.join(change.description.splitlines())
+        out.write(
+            f'* {change.type}:{change.category}:{description}\n'
+        )
+    out.write('\n\n')
 
 
 class ChangeQuery:
@@ -554,6 +566,10 @@ def create_parser() -> argparse.ArgumentParser:
                                              'next-version',
                                              'last-release-version'))
     query.set_defaults(func=cmd_query)
+
+    pending = subparser.add_parser('pending')
+    pending.set_defaults(func=cmd_pending)
+
     return parser
 
 
