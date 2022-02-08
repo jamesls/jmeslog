@@ -5,3 +5,4 @@ check:
 coverage:
 	py.test --cov jmeslog --cov-report term-missing ./tests
 
+prcheck: check coverage
