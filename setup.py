@@ -20,7 +20,7 @@ setup(
     zip_safe=True,
     keywords='changelog jmeslog changes',
     install_requires=[
-        'Jinja2<3.0.0',
+        'Jinja2~=3.1',
     ],
     entry_points={
         'console_scripts': [
