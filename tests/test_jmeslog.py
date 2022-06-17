@@ -6,6 +6,7 @@ from unittest import mock
 from typing import Optional
 
 import jmeslog
+from jmeslog import model
 
 
 @dataclass
@@ -23,12 +24,12 @@ class NewChangeArgs:
 
 
 def new_change(change_type, category='foo', description='bar'):
-    return jmeslog.JMESLogEntry(type=change_type,
+    return model.JMESLogEntry(type=change_type,
                                 category=category, description=description)
 
 
 def test_create_changelog_entry():
-    entry = jmeslog.JMESLogEntry(type='feature',
+    entry = model.JMESLogEntry(type='feature',
                                  category='foo',
                                  description='My Feature')
     assert entry.to_json() == (
@@ -41,8 +42,8 @@ def test_create_changelog_entry():
 
 
 def test_can_validate_allowed_values():
-    schema = jmeslog.EntrySchema(type=['feature', 'bugfix'])
-    entry = jmeslog.JMESLogEntry(type='feature', category='foo',
+    schema = model.EntrySchema(type=['feature', 'bugfix'])
+    entry = model.JMESLogEntry(type='feature', category='foo',
                                  description='My feature')
     assert jmeslog.validate_change_entry(entry=entry, schema=schema) is None
     err_msg = (
@@ -53,7 +54,7 @@ def test_can_validate_allowed_values():
                        match=err_msg):
         jmeslog.validate_change_entry(
             schema=schema,
-            entry=jmeslog.JMESLogEntry(
+            entry=model.JMESLogEntry(
                 type='notafeature',
                 category='foo',
                 description='bar')
@@ -61,8 +62,8 @@ def test_can_validate_allowed_values():
 
 
 def test_no_values_can_be_empty():
-    schema = jmeslog.EntrySchema(type=['feature', 'bugfix'])
-    entry = jmeslog.JMESLogEntry(type='feature', category='foo',
+    schema = model.EntrySchema(type=['feature', 'bugfix'])
+    entry = model.JMESLogEntry(type='feature', category='foo',
                                  description='')
     err_msg = 'The "description" value cannot be empty.'
     with pytest.raises(jmeslog.ValidationError,
@@ -74,7 +75,7 @@ def test_no_values_can_be_empty():
 
 
 def test_no_prompt_if_entry_complete():
-    completed = jmeslog.JMESLogEntry(
+    completed = model.JMESLogEntry(
         type='feature',
         category='foo',
         description='My Feature'
@@ -86,7 +87,7 @@ def test_no_prompt_if_entry_complete():
 
 
 def test_prompt_in_editor_if_incomplete():
-    incomplete = jmeslog.JMESLogEntry(
+    incomplete = model.JMESLogEntry(
         type='feature',
         category='foo',
         # Missing a description.
@@ -99,7 +100,7 @@ def test_prompt_in_editor_if_incomplete():
 
 
 def test_can_return_generated_entry():
-    completed = jmeslog.JMESLogEntry(
+    completed = model.JMESLogEntry(
         type='feature',
         category='foo',
         description='My Feature'
@@ -116,7 +117,7 @@ def test_can_return_generated_entry():
 
 
 def test_can_record_entry(tmpdir):
-    entry = jmeslog.JMESLogEntry(
+    entry = model.JMESLogEntry(
         type='feature',
         category='foo',
         description='My Feature'
@@ -128,7 +129,7 @@ def test_can_record_entry(tmpdir):
             entry=entry,
             retriever=mock.Mock(spec=jmeslog.EditorRetriever),
         ),
-        schema=jmeslog.EntrySchema(),
+        schema=model.EntrySchema(),
         file_writer=jmeslog.EntryFileWriter(),
         output_dir=str(change_dir),
     )
@@ -143,7 +144,7 @@ def _assert_entry_file_parses_to(contents, expected):
 
 
 def test_can_parse_empty_file():
-    _assert_entry_file_parses_to('', jmeslog.JMESLogEntry.empty())
+    _assert_entry_file_parses_to('', model.JMESLogEntry.empty())
 
 
 def test_can_parse_single_fields():
@@ -156,7 +157,7 @@ def test_can_parse_single_fields():
         "description: bar\n"
     )
     _assert_entry_file_parses_to(
-        contents, jmeslog.JMESLogEntry(type='bugfix',
+        contents, model.JMESLogEntry(type='bugfix',
                                        category='foo',
                                        description='bar'))
 
@@ -171,7 +172,7 @@ def test_ignores_unknown_fields():
         "baz: bar\n"
     )
     _assert_entry_file_parses_to(
-        contents, jmeslog.JMESLogEntry.empty())
+        contents, model.JMESLogEntry.empty())
 
 
 def test_last_entry_wins():
@@ -184,24 +185,24 @@ def test_last_entry_wins():
         "description: last\n"
     )
     _assert_entry_file_parses_to(
-        contents, jmeslog.JMESLogEntry(type='last',
+        contents, model.JMESLogEntry(type='last',
                                        category='last',
                                        description='last'))
 
 
 @pytest.mark.parametrize(
     'entry_types,bump_type', [
-        (['bugfix', 'bugfix', 'bugfix'], jmeslog.VersionBump.PATCH_VERSION),
-        (['enhancement', 'enhancement'], jmeslog.VersionBump.PATCH_VERSION),
-        (['bugfix', 'enhancement'], jmeslog.VersionBump.PATCH_VERSION),
-        (['feature'], jmeslog.VersionBump.MINOR_VERSION),
-        (['feature', 'bugfix'], jmeslog.VersionBump.MINOR_VERSION),
+        (['bugfix', 'bugfix', 'bugfix'], model.VersionBump.PATCH_VERSION),
+        (['enhancement', 'enhancement'], model.VersionBump.PATCH_VERSION),
+        (['bugfix', 'enhancement'], model.VersionBump.PATCH_VERSION),
+        (['feature'], model.VersionBump.MINOR_VERSION),
+        (['feature', 'bugfix'], model.VersionBump.MINOR_VERSION),
         (['enhancement', 'feature', 'bugfix'],
-         jmeslog.VersionBump.MINOR_VERSION),
+         model.VersionBump.MINOR_VERSION),
     ]
 )
 def test_bugfix_is_patch_version(entry_types, bump_type):
-    changes = jmeslog.JMESLogEntryCollection(
+    changes = model.JMESLogEntryCollection(
         changes=[
             new_change(entry_type) for entry_type in entry_types
         ]
@@ -210,7 +211,7 @@ def test_bugfix_is_patch_version(entry_types, bump_type):
 
 
 def test_collection_to_dict():
-    changes = jmeslog.JMESLogEntryCollection(
+    changes = model.JMESLogEntryCollection(
         changes=[new_change('bugfix')],
         schema_version='1.0',
         summary='Summary of release.',
@@ -236,7 +237,7 @@ def test_can_load_next_changes_dir_into_entries(tmpdir):
     write_change('enhancement', str(change_dir))
 
     entries = jmeslog.load_next_changes(str(change_dir))
-    assert entries == jmeslog.JMESLogEntryCollection(
+    assert entries == model.JMESLogEntryCollection(
         changes=[new_change('feature'),
                  new_change('bugfix'),
                  new_change('enhancement')]
@@ -245,16 +246,16 @@ def test_can_load_next_changes_dir_into_entries(tmpdir):
 
 @pytest.mark.parametrize(
     'last_version,bump_type,new_version', [
-        ('0.0.1', jmeslog.VersionBump.PATCH_VERSION, '0.0.2'),
-        ('1.0.1', jmeslog.VersionBump.PATCH_VERSION, '1.0.2'),
-        ('1.0.0', jmeslog.VersionBump.PATCH_VERSION, '1.0.1'),
-        ('1.0.0', jmeslog.VersionBump.MINOR_VERSION, '1.1.0'),
-        ('1.9.0', jmeslog.VersionBump.MINOR_VERSION, '1.10.0'),
-        ('1.0.9', jmeslog.VersionBump.MINOR_VERSION, '1.1.0'),
-        ('1.2.9', jmeslog.VersionBump.MINOR_VERSION, '1.3.0'),
-        ('1.0.0', jmeslog.VersionBump.MAJOR_VERSION, '2.0.0'),
-        ('1.1.0', jmeslog.VersionBump.MAJOR_VERSION, '2.0.0'),
-        ('1.1.1', jmeslog.VersionBump.MAJOR_VERSION, '2.0.0'),
+        ('0.0.1', model.VersionBump.PATCH_VERSION, '0.0.2'),
+        ('1.0.1', model.VersionBump.PATCH_VERSION, '1.0.2'),
+        ('1.0.0', model.VersionBump.PATCH_VERSION, '1.0.1'),
+        ('1.0.0', model.VersionBump.MINOR_VERSION, '1.1.0'),
+        ('1.9.0', model.VersionBump.MINOR_VERSION, '1.10.0'),
+        ('1.0.9', model.VersionBump.MINOR_VERSION, '1.1.0'),
+        ('1.2.9', model.VersionBump.MINOR_VERSION, '1.3.0'),
+        ('1.0.0', model.VersionBump.MAJOR_VERSION, '2.0.0'),
+        ('1.1.0', model.VersionBump.MAJOR_VERSION, '2.0.0'),
+        ('1.1.1', model.VersionBump.MAJOR_VERSION, '2.0.0'),
     ]
 )
 def test_determine_next_version(last_version, bump_type, new_version):
@@ -294,7 +295,7 @@ def test_can_consolidate_next_release(tmpdir):
     )
     jmeslog.consolidate_next_release(
         next_version='1.1.0', change_dir=str(change_dir),
-        changes=jmeslog.JMESLogEntryCollection(changes=changes))
+        changes=model.JMESLogEntryCollection(changes=changes))
     assert os.path.isfile(str(change_dir.join('1.1.0.json')))
     assert not os.path.isdir(next_release_dir)
     with open(str(change_dir.join('1.1.0.json'))) as f:
@@ -317,10 +318,10 @@ def test_can_create_collection_from_dict():
         ],
         'summary': 'Foo release.'
     }
-    collection = jmeslog.JMESLogEntryCollection.from_dict(release_data)
+    collection = model.JMESLogEntryCollection.from_dict(release_data)
     assert collection.schema_version == '0.2'
     assert collection.summary == 'Foo release.'
-    assert collection.changes == [jmeslog.JMESLogEntry(type='feature',
+    assert collection.changes == [model.JMESLogEntry(type='feature',
                                                        category='foo',
                                                        description='bar')]
 
@@ -329,10 +330,10 @@ def test_can_create_collection_from_old_format():
     release_data = [
         {'type': 'feature', 'category': 'foo', 'description': 'bar'},
     ]
-    collection = jmeslog.JMESLogEntryCollection.from_dict(release_data)
+    collection = model.JMESLogEntryCollection.from_dict(release_data)
     assert collection.schema_version == '0.1'
     assert collection.summary == ''
-    assert collection.changes == [jmeslog.JMESLogEntry(type='feature',
+    assert collection.changes == [model.JMESLogEntry(type='feature',
                                                        category='foo',
                                                        description='bar')]
 

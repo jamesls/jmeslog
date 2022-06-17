@@ -19,12 +19,13 @@ import tempfile
 import subprocess
 import shutil
 import time
-import enum
-from dataclasses import dataclass, asdict, field, fields
-from typing import List, Dict, Any, IO, Union
+from typing import List, Dict, Any, IO
+from dataclasses import asdict, fields
 from distutils.version import StrictVersion
 
 import jinja2
+
+from jmeslog import model
 
 
 __version__ = '0.1.1'
@@ -72,12 +73,6 @@ CHANGELOG
 """
 
 
-class VersionBump(enum.Enum):
-    PATCH_VERSION = 'patch'
-    MINOR_VERSION = 'minor'
-    MAJOR_VERSION = 'major'
-
-
 class ValidationError(Exception):
     def __init__(self, errors: List[str]) -> None:
         self.errors = errors
@@ -95,96 +90,8 @@ class NoChangesFoundError(Exception):
         super().__init__("There are no pending changes.")
 
 
-@dataclass
-class EntrySchema:
-    type: List[str] = field(default_factory=lambda: ['feature', 'bugfix',
-                                                     'enhancement'])
-    # An empty list means any string is valid.
-    category: List[str] = field(default_factory=lambda: [])
-
-
-@dataclass
-class JMESLogEntry:
-    type: str
-    category: str
-    description: str
-
-    @classmethod
-    def empty(cls) -> 'JMESLogEntry':
-        return cls('', '', '')
-
-    def to_json(self) -> str:
-        entry_dict = self.to_dict()
-        return json.dumps(entry_dict, indent=2)
-
-    def to_dict(self) -> Dict[str, str]:
-        return asdict(self)
-
-    def is_completed(self) -> bool:
-        """Check if all fields are non-empty."""
-        for value in asdict(self).values():
-            if not value:
-                return False
-        return True
-
-
-@dataclass
-class JMESLogEntryCollection:
-    changes: List[JMESLogEntry]
-    schema_version: str = '0.2'
-    summary: str = ''
-
-    _OLD_SCHEMA_VERSION = '0.1'
-
-    @property
-    def version_bump_type(self) -> VersionBump:
-        bump_type = VersionBump.PATCH_VERSION
-        for entry in self.changes:
-            if entry.type == 'feature':
-                bump_type = VersionBump.MINOR_VERSION
-        return bump_type
-
-    def to_dict(self) -> Dict[str, Any]:
-        result = {
-            'schema-version': self.schema_version,
-            'changes': [entry.to_dict() for entry in self.changes]
-        }
-        if self.summary:
-            result['summary'] = self.summary
-        return result
-
-    @classmethod
-    def from_dict(cls,
-                  release_info: Union[List[Any], Dict[str, Any]]
-                  ) -> 'JMESLogEntryCollection':
-        if isinstance(release_info, list):
-            return cls._load_old_format(release_info)
-        return cls._load_new_format(release_info)
-
-    @classmethod
-    def _load_old_format(cls,
-                         release_info: List[Any]) -> 'JMESLogEntryCollection':
-        collection = cls(
-            schema_version=cls._OLD_SCHEMA_VERSION,
-            changes=[JMESLogEntry(**entry) for entry in release_info],
-        )
-        return collection
-
-    @classmethod
-    def _load_new_format(cls,
-                         release_info: Dict[str, Any]
-                         ) -> 'JMESLogEntryCollection':
-        collection = cls(
-            schema_version=release_info['schema-version'],
-            changes=[JMESLogEntry(**entry)
-                     for entry in release_info['changes']],
-            summary=release_info.get('summary', ''),
-        )
-        return collection
-
-
 class EditorRetriever:
-    def prompt_entry_values(self, entry: JMESLogEntry) -> None:
+    def prompt_entry_values(self, entry: model.JMESLogEntry) -> None:
         with tempfile.NamedTemporaryFile('w') as f:
             self._write_template_to_tempfile(f, entry)
             self._open_tempfile_in_editor(f.name)
@@ -198,7 +105,7 @@ class EditorRetriever:
 
     def _write_template_to_tempfile(self,
                                     f: IO[str],
-                                    entry: JMESLogEntry) -> None:
+                                    entry: model.JMESLogEntry) -> None:
         contents = DEFAULT_TEMPLATE.format(
             type=entry.type,
             category=entry.category,
@@ -213,20 +120,20 @@ class EditorRetriever:
             return filled_in_contents
 
     def _parse_filled_in_contents(self, contents: str,
-                                  entry: JMESLogEntry) -> None:
+                                  entry: model.JMESLogEntry) -> None:
         parsed_entry = EntryFileParser().parse_contents(contents)
         self._update_values_from_new_entry(entry, parsed_entry)
 
-    def _update_values_from_new_entry(self, entry: JMESLogEntry,
-                                      new_entry: JMESLogEntry) -> None:
+    def _update_values_from_new_entry(self, entry: model.JMESLogEntry,
+                                      new_entry: model.JMESLogEntry) -> None:
         for key, value in asdict(new_entry).items():
             if value:
                 setattr(entry, key, value)
 
 
 class EntryFileParser:
-    def parse_contents(self, contents: str) -> JMESLogEntry:
-        entry = JMESLogEntry.empty()
+    def parse_contents(self, contents: str) -> model.JMESLogEntry:
+        entry = model.JMESLogEntry.empty()
         if not contents.strip():
             return entry
         field_names = [f.name for f in fields(entry)]
@@ -242,7 +149,7 @@ class EntryFileParser:
 
 
 class EntryGenerator:
-    def __init__(self, entry: JMESLogEntry, retriever: EditorRetriever):
+    def __init__(self, entry: model.JMESLogEntry, retriever: EditorRetriever):
         self._entry = entry
         self._retriever = retriever
 
@@ -251,12 +158,12 @@ class EntryGenerator:
             self._retriever.prompt_entry_values(self._entry)
 
     @property
-    def change_entry(self) -> JMESLogEntry:
+    def change_entry(self) -> model.JMESLogEntry:
         return self._entry
 
 
 class EntryFileWriter:
-    def write_next_release_entry(self, entry: JMESLogEntry,
+    def write_next_release_entry(self, entry: model.JMESLogEntry,
                                  change_dir: str) -> str:
         self._create_next_release_dir(change_dir)
         abs_filename = self._generate_random_file(entry, change_dir)
@@ -270,7 +177,7 @@ class EntryFileWriter:
         if not os.path.isdir(next_release):
             os.mkdir(next_release)
 
-    def _generate_random_file(self, entry: JMESLogEntry,
+    def _generate_random_file(self, entry: model.JMESLogEntry,
                               change_dir: str) -> str:
         next_release = os.path.join(change_dir, 'next-release')
         # Need to generate a unique filename for this change.
@@ -292,7 +199,7 @@ class EntryFileWriter:
 
 
 class EntryRecorder:
-    def __init__(self, entry_gen: EntryGenerator, schema: EntrySchema,
+    def __init__(self, entry_gen: EntryGenerator, schema: model.EntrySchema,
                  file_writer: EntryFileWriter, output_dir: str = '.changes'):
         self._entry_gen = entry_gen
         self._schema = schema
@@ -308,7 +215,7 @@ class EntryRecorder:
         return filename
 
 
-def validate_change_entry(entry: JMESLogEntry, schema: EntrySchema) -> None:
+def validate_change_entry(entry: model.JMESLogEntry, schema: model.EntrySchema) -> None:
     entry_dict = asdict(entry)
     schema_dict = asdict(schema)
     errors = []
@@ -350,7 +257,7 @@ def cmd_new_release(args: argparse.Namespace) -> int:
 
 
 def consolidate_next_release(next_version: str, change_dir: str,
-                             changes: JMESLogEntryCollection) -> str:
+                             changes: model.JMESLogEntryCollection) -> str:
     # Creates a new x.y.x.json file in .changes/ with the changes in
     # .changes/next-release.
     # It'll then remove the .changes/next-release directory.
@@ -378,21 +285,21 @@ def sorted_versioned_releases(change_dir: str) -> List[str]:
 
 
 def determine_next_version(last_released_version: str,
-                           version_bump_type: VersionBump) -> str:
+                           version_bump_type: model.VersionBump) -> str:
     parts = last_released_version.split('.')
-    if version_bump_type == VersionBump.PATCH_VERSION:
+    if version_bump_type == model.VersionBump.PATCH_VERSION:
         parts[2] = str(int(parts[2]) + 1)
-    elif version_bump_type == VersionBump.MINOR_VERSION:
+    elif version_bump_type == model.VersionBump.MINOR_VERSION:
         parts[1] = str(int(parts[1]) + 1)
         parts[2] = '0'
-    elif version_bump_type == VersionBump.MAJOR_VERSION:
+    elif version_bump_type == model.VersionBump.MAJOR_VERSION:
         parts[0] = str(int(parts[0]) + 1)
         parts[1] = '0'
         parts[2] = '0'
     return '.'.join(parts)
 
 
-def load_next_changes(change_dir: str) -> JMESLogEntryCollection:
+def load_next_changes(change_dir: str) -> model.JMESLogEntryCollection:
     next_release = os.path.join(change_dir, 'next-release')
     if not os.path.isdir(next_release):
         raise NoChangesFoundError()
@@ -400,23 +307,23 @@ def load_next_changes(change_dir: str) -> JMESLogEntryCollection:
     for change in sorted(os.listdir(next_release)):
         entry = parse_entry(os.path.join(next_release, change))
         changes.append(entry)
-    return JMESLogEntryCollection(changes=changes)
+    return model.JMESLogEntryCollection(changes=changes)
 
 
-def parse_entry(filename: str) -> JMESLogEntry:
+def parse_entry(filename: str) -> model.JMESLogEntry:
     with open(filename) as f:
         data = json.load(f)
-        return JMESLogEntry(**data)
+        return model.JMESLogEntry(**data)
 
 
-def create_entry_recorder(entry: JMESLogEntry,
+def create_entry_recorder(entry: model.JMESLogEntry,
                           change_dir: str) -> EntryRecorder:
     recorder = EntryRecorder(
         entry_gen=EntryGenerator(
             entry=entry,
             retriever=EditorRetriever(),
         ),
-        schema=EntrySchema(),
+        schema=model.EntrySchema(),
         file_writer=EntryFileWriter(),
         output_dir=change_dir,
     )
@@ -424,7 +331,7 @@ def create_entry_recorder(entry: JMESLogEntry,
 
 
 def cmd_new_change(args: argparse.Namespace) -> int:
-    entry = JMESLogEntry(
+    entry = model.JMESLogEntry(
         type=args.type,
         category=args.category,
         description=args.description
@@ -461,7 +368,7 @@ def cmd_render(args: argparse.Namespace) -> int:
     return 0
 
 
-def render_changes(changes: Dict[str, JMESLogEntryCollection],
+def render_changes(changes: Dict[str, model.JMESLogEntryCollection],
                    out: IO[str], template_contents: str) -> None:
     context = {
         'releases': reversed(list(changes.items())),
@@ -471,13 +378,13 @@ def render_changes(changes: Dict[str, JMESLogEntryCollection],
     out.write(result)
 
 
-def load_all_changes(change_dir: str) -> Dict[str, JMESLogEntryCollection]:
+def load_all_changes(change_dir: str) -> Dict[str, model.JMESLogEntryCollection]:
     releases = {}
     for version_number in sorted_versioned_releases(change_dir):
         filename = os.path.join(change_dir, f'{version_number}.json')
         with open(filename) as f:
             data = json.load(f)
-            releases[version_number] = JMESLogEntryCollection.from_dict(data)
+            releases[version_number] = model.JMESLogEntryCollection.from_dict(data)
     return releases
 
 
@@ -506,7 +413,7 @@ def cmd_pending(args: argparse.Namespace) -> int:
     return 0
 
 
-def _render_single_release_changes(change_collection: JMESLogEntryCollection,
+def _render_single_release_changes(change_collection: model.JMESLogEntryCollection,
                                    out: IO[str]) -> None:
     for change in change_collection.changes:
         description = '\n  '.join(change.description.splitlines())
