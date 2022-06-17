@@ -102,14 +102,7 @@ Next create any number of templates you want.  For example::
     touch .changes/templates/MYTEMPLATE
 
 This name can be anything you want.  Next, you write your template.
-You can either use the built-in template engine, or you can use the
-`jinja2 <https://jinja.palletsprojects.com/>`__ engine.
-To use jinja2, you must install the Jinja2 python package.
-
-The built-in template engine is a lite version of jinja2 that doesn't require
-any additional dependencies.  It's provided as a convenience so you don't
-need to worry about installing any additional 3rd party dependencies.  However,
-if you'd like more advanced templating features, jinja2 is recommended.
+Templates are written using `jinja2 <https://jinja.palletsprojects.com/>`__.
 
 The template is provided the following context dictionary when rendering
 the changelog::
@@ -130,7 +123,8 @@ filename) as the ``--template`` parameter.  For example, if your template
 file is ``.changes/templates/MYTEMPLATE``, you'd specify
 ``jmeslog render --template MYTEMPLATE``.
 
-Here's a sample template that represents the default template::
+Here's the default template that's used if no ``--template`` parameter is
+provided::
 
     =========
     CHANGELOG

@@ -21,7 +21,7 @@ import shutil
 import time
 import enum
 from dataclasses import dataclass, asdict, field, fields
-from typing import List, Dict, Any, IO, Union, Optional
+from typing import List, Dict, Any, IO, Union
 from distutils.version import StrictVersion
 
 import jinja2
@@ -51,6 +51,24 @@ category: {category}
 # will get automatically replaced with the correct
 # link.
 description: {description}
+"""
+
+DEFAULT_RENDER_TEMPLATE = """\
+=========
+CHANGELOG
+=========
+
+{% for release, changes in releases %}
+{{ release }}
+{{ '=' * release|length }}
+{%- if changes.summary %}
+{{ changes.summary -}}
+{% endif %}
+{% for change in changes.changes %}
+* {{ change.type }}:{{ change.category }}:{{ change.description -}}
+{% endfor %}
+{% endfor %}
+
 """
 
 
@@ -427,61 +445,24 @@ def cmd_new_change(args: argparse.Namespace) -> int:
 
 
 def cmd_render(args: argparse.Namespace) -> int:
-    # TODO: The plan is to allow this file to be templated to people
-    # can use whatever format/layout they want.  But for now, I'm going
-    # with a default layout.
     changes = load_all_changes(args.change_dir)
     template_file = None
     if args.template:
         template_file = os.path.join(args.change_dir,
                                      'templates', args.template)
-    render_changes(changes, sys.stdout, template_file)
+        with open(template_file) as f:
+            template_contents = f.read()
+    else:
+        template_contents = DEFAULT_RENDER_TEMPLATE
+    render_changes(changes, sys.stdout, template_contents)
     return 0
 
 
 def render_changes(changes: Dict[str, JMESLogEntryCollection],
-                   out: IO[str], template_file: Optional[str]) -> None:
-    if template_file is None:
-        _render_default_template(changes, out)
-    else:
-        _render_with_template(changes, out, template_file)
-
-
-def _render_default_template(changes: Dict[str, JMESLogEntryCollection],
-                             out: IO[str]) -> None:
-    out.write(
-        '=========\n'
-        'CHANGELOG\n'
-        '=========\n'
-        '\n'
-    )
-    for version_number, release in reversed(list(changes.items())):
-        out.write(
-            f'{version_number}\n'
-            f'{"=" * len(version_number)}\n'
-            '\n'
-        )
-        if release.summary:
-            out.write('\n')
-            out.write(release.summary)
-            out.write('\n')
-        _render_single_release_changes(release, out)
-
-
-def _render_with_template(changes: Dict[str, JMESLogEntryCollection],
-                          out: IO[str],
-                          template_file: str) -> None:
-    _render_jinja2_template(changes, out, template_file)
-
-
-def _render_jinja2_template(changes: Dict[str, JMESLogEntryCollection],
-                            out: IO[str],
-                            template_file: str) -> None:
+                   out: IO[str], template_contents: str) -> None:
     context = {
         'releases': reversed(list(changes.items())),
     }
-    with open(template_file) as f:
-        template_contents = f.read()
     template = jinja2.Template(template_contents)
     result = template.render(**context)
     out.write(result)
