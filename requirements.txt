@@ -3,4 +3,3 @@ pytest==5.3.5
 pytest-cov==2.8.1
 mypy==0.931
 flake8==3.7.9
-Jinja2==2.11.1

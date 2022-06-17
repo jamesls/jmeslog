@@ -19,6 +19,9 @@ setup(
     license="Apache License 2.0",
     zip_safe=True,
     keywords='changelog jmeslog changes',
+    install_requires=[
+        'Jinja2<3.0.0',
+    ],
     entry_points={
         'console_scripts': [
             'jmeslog = jmeslog:main',
