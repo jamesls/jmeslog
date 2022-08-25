@@ -337,9 +337,12 @@ def cmd_new_release(args: argparse.Namespace) -> int:
     # Create a new version file from the existing changes.
     # Delete the next changes folder.
     changes = load_next_changes(args.change_dir)
-    last_released_version = find_last_released_version(args.change_dir)
-    next_version = determine_next_version(last_released_version,
-                                          changes.version_bump_type)
+    if args.release_version is not None:
+        next_version = args.release_version
+    else:
+        last_released_version = find_last_released_version(args.change_dir)
+        next_version = determine_next_version(last_released_version,
+                                              changes.version_bump_type)
     release_file = consolidate_next_release(
         next_version, args.change_dir, changes)
     print(f"New release file written: {release_file}")

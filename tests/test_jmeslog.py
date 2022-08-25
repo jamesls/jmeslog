@@ -1,9 +1,25 @@
 import os
 import pytest
 import json
+from dataclasses import dataclass
 from unittest import mock
+from typing import Optional
 
 import jmeslog
+
+
+@dataclass
+class CommandArgs:
+    change_dir: Optional[str] = None
+    release_version: Optional[str] = None
+
+
+@dataclass
+class NewChangeArgs:
+    type: str
+    category: str
+    description: str
+    change_dir: Optional[str] = None
 
 
 def new_change(change_type, category='foo', description='bar'):
@@ -319,3 +335,19 @@ def test_can_create_collection_from_old_format():
     assert collection.changes == [jmeslog.JMESLogEntry(type='feature',
                                                        category='foo',
                                                        description='bar')]
+
+
+
+def test_can_set_explicit_version(tmpdir):
+    change_dir = os.path.join(str(tmpdir), '.changes')
+    args = CommandArgs(change_dir=change_dir, release_version='1.2.3')
+    jmeslog.cmd_init(args)
+    new_change_args = NewChangeArgs(
+        type='enhancement',
+        category='Foo',
+        description='Changed foo',
+        change_dir=change_dir,
+    )
+    jmeslog.cmd_new_change(new_change_args)
+    jmeslog.cmd_new_release(args)
+    assert os.listdir(change_dir)[0] == '1.2.3.json'
