@@ -15,7 +15,6 @@ setup(
     author_email='js@jamesls.com',
     url='https://github.com/jamesls/jmeslog',
     packages=find_packages(exclude=['tests']),
-    py_modules=['jmeslog'],
     license="Apache License 2.0",
     zip_safe=True,
     keywords='changelog jmeslog changes',
@@ -24,7 +23,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'jmeslog = jmeslog:main',
+            'jmeslog = jmeslog.cli:main',
         ]
     },
     classifiers=[
