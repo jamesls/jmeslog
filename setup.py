@@ -23,7 +23,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'jmeslog = jmeslog:main',
+            'jmeslog = jmeslog.cli:main',
         ]
     },
     classifiers=[
