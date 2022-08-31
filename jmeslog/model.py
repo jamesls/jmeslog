@@ -1,6 +1,6 @@
 import enum
 import json
-from dataclasses import dataclass, asdict, field, fields
+from dataclasses import dataclass, asdict, field
 from typing import List, Dict, Any, Union
 
 
@@ -12,8 +12,9 @@ class VersionBump(enum.Enum):
 
 @dataclass
 class EntrySchema:
-    type: List[str] = field(default_factory=lambda: ['feature', 'bugfix',
-                                                     'enhancement'])
+    type: List[str] = field(
+        default_factory=lambda: ['feature', 'bugfix', 'enhancement']
+    )
     # An empty list means any string is valid.
     category: List[str] = field(default_factory=lambda: [])
 
@@ -62,23 +63,24 @@ class JMESLogEntryCollection:
     def to_dict(self) -> Dict[str, Any]:
         result = {
             'schema-version': self.schema_version,
-            'changes': [entry.to_dict() for entry in self.changes]
+            'changes': [entry.to_dict() for entry in self.changes],
         }
         if self.summary:
             result['summary'] = self.summary
         return result
 
     @classmethod
-    def from_dict(cls,
-                  release_info: Union[List[Any], Dict[str, Any]]
-                  ) -> 'JMESLogEntryCollection':
+    def from_dict(
+        cls, release_info: Union[List[Any], Dict[str, Any]]
+    ) -> 'JMESLogEntryCollection':
         if isinstance(release_info, list):
             return cls._load_old_format(release_info)
         return cls._load_new_format(release_info)
 
     @classmethod
-    def _load_old_format(cls,
-                         release_info: List[Any]) -> 'JMESLogEntryCollection':
+    def _load_old_format(
+        cls, release_info: List[Any]
+    ) -> 'JMESLogEntryCollection':
         collection = cls(
             schema_version=cls._OLD_SCHEMA_VERSION,
             changes=[JMESLogEntry(**entry) for entry in release_info],
@@ -86,13 +88,14 @@ class JMESLogEntryCollection:
         return collection
 
     @classmethod
-    def _load_new_format(cls,
-                         release_info: Dict[str, Any]
-                         ) -> 'JMESLogEntryCollection':
+    def _load_new_format(
+        cls, release_info: Dict[str, Any]
+    ) -> 'JMESLogEntryCollection':
         collection = cls(
             schema_version=release_info['schema-version'],
-            changes=[JMESLogEntry(**entry)
-                     for entry in release_info['changes']],
+            changes=[
+                JMESLogEntry(**entry) for entry in release_info['changes']
+            ],
             summary=release_info.get('summary', ''),
         )
         return collection
