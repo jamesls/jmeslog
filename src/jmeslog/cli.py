@@ -1,11 +1,13 @@
 import argparse
 import os
 import sys
+import typing
 
-from jmeslog import model
-from jmeslog.errors import ValidationError, NoChangesFoundError
+from jmeslog import core, model
 from jmeslog.constants import DEFAULT_RENDER_TEMPLATE
-from jmeslog import core
+from jmeslog.errors import NoChangesFoundError, ValidationError
+
+SUB_CMD_FUNC = typing.Callable[[argparse.Namespace], int]
 
 
 def cmd_new_release(args: argparse.Namespace) -> int:
@@ -165,7 +167,8 @@ def create_parser() -> argparse.ArgumentParser:
 def main() -> int:
     parser = create_parser()
     args = parser.parse_args()
-    return args.func(args)
+    handler: SUB_CMD_FUNC = args.func
+    return handler(args)
 
 
 if __name__ == '__main__':

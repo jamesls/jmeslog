@@ -1,0 +1,21 @@
+{
+  "template": "https://github.com/jamesls/jmes-cookiecutter-python-package",
+  "commit": "eec8bc5b7a74af43672ef6e6472f9cd467c819d8",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "full_name": "James Saryerwinnie",
+      "email": "js@jamesls.com",
+      "github_username": "jamesls",
+      "project_name": "JMESLog",
+      "project_slug": "jmeslog",
+      "package_name": "jmeslog",
+      "project_short_description": "Tool for managing changelogs",
+      "pypi_username": "jamesls",
+      "year": "2022",
+      "version": "0.1.1",
+      "_template": "https://github.com/jamesls/jmes-cookiecutter-python-package"
+    }
+  },
+  "directory": null
+}

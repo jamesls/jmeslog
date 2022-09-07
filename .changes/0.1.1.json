@@ -9,7 +9,7 @@
     {
       "type": "enhancement",
       "category": "CLI",
-      "description": "Add a ``--version`` option to the CLI."
+      "description": "Add a `--version` option to the CLI."
     }
   ]
 }
