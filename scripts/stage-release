@@ -1,0 +1,113 @@
+#!/usr/bin/env python3
+import argparse
+import os
+import subprocess
+import tempfile
+import zipfile
+
+REPO_ROOT = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
+
+
+def stage_release(args):
+    with tempfile.TemporaryDirectory() as dirname:
+        stage_dir = os.path.join(dirname, 'staged-release')
+        os.makedirs(stage_dir)
+        make_stage_dir(stage_dir)
+        zip_stage_dir(dirname, args.output)
+
+
+def make_stage_dir(stage_dir):
+    repos_dir = os.path.join(stage_dir, 'repos')
+    os.makedirs(repos_dir)
+    subprocess.run(
+        ['git', 'clone', REPO_ROOT],
+        cwd=repos_dir,
+        check=True,
+    )
+    single_repo_dir = os.path.join(repos_dir, os.listdir(repos_dir)[0])
+    next_release_type = subprocess.run(
+        ['jmeslog', 'query', 'next-release-type'],
+        cwd=single_repo_dir,
+        capture_output=True,
+        check=True,
+        encoding='utf-8',
+    ).stdout.strip()
+    # Bump the version in the pyproject.toml config.
+    subprocess.run(
+        ['poetry', 'version', next_release_type],
+        cwd=single_repo_dir,
+        check=True,
+    )
+    new_version = subprocess.run(
+        ['poetry', 'version', '--short'],
+        capture_output=True,
+        encoding='utf-8',
+        check=True,
+        cwd=single_repo_dir,
+    ).stdout.strip()
+    subprocess.run(
+        ['jmeslog', 'new-release', '--release-version', new_version],
+        cwd=single_repo_dir,
+        check=True,
+    )
+    with open('CHANGELOG.md', 'w') as f:
+        subprocess.run(
+            ['jmeslog', 'render', '--template', 'CHANGELOG'],
+            cwd=single_repo_dir,
+            check=True,
+            stdout=f,
+        )
+    subprocess.run(
+        ['git', 'add', '-A', '.'],
+        cwd=single_repo_dir,
+        check=True,
+    )
+    subprocess.run(
+        ['git', 'commit', '-a', '-m', f'Bumping version to {new_version}'],
+        cwd=single_repo_dir,
+        check=True,
+    )
+    subprocess.run(
+        [
+            'git',
+            'tag',
+            '-a',
+            new_version,
+            '-m',
+            f'Tagging {new_version} release',
+        ],
+        check=True,
+        cwd=single_repo_dir,
+    )
+    subprocess.run(['poetry', 'build'], cwd=single_repo_dir, check=True)
+
+
+def zip_stage_dir(dirname, outfile):
+    with zipfile.ZipFile(
+        outfile, mode='w', compression=zipfile.ZIP_DEFLATED
+    ) as z:
+        for root, _, filenames in os.walk(dirname):
+            for filename in filenames:
+                full_path = os.path.join(root, filename)
+                prefix_len = len(dirname) + 1
+                relative_path = full_path[prefix_len:]
+                z.write(full_path, relative_path)
+    print(f"Zipfile written to: {outfile}")
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-o',
+        '--output',
+        default='staged-release.zip',
+        help='Filename of staged zip file.',
+    )
+    args = parser.parse_args()
+    stage_release(args)
+
+
+if __name__ == '__main__':
+    main()

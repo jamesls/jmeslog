@@ -1,9 +1,10 @@
-import os
-import pytest
 import json
+import os
 from dataclasses import dataclass
-from unittest import mock
 from typing import Optional
+from unittest import mock
+
+import pytest
 
 import jmeslog
 import jmeslog.cli
@@ -272,7 +273,7 @@ def test_determine_next_version(last_version, bump_type, new_version):
 def test_can_find_last_released_version(tmpdir):
     change_dir = tmpdir.join('.changes')
     change_dir.mkdir()
-    next_release = change_dir.join('next-release').mkdir()
+    change_dir.join('next-release').mkdir()
     change_dir.join('0.0.1.json').write('{}')
     change_dir.join('0.1.1.json').write('{}')
     change_dir.join('0.1.10.json').write('{}')

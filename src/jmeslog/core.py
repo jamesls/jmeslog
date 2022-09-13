@@ -7,13 +7,13 @@ import tempfile
 import time
 from dataclasses import asdict, fields
 from distutils.version import StrictVersion
-from typing import IO, List, Dict, Any
+from typing import IO, Any, Dict, List
 
 import jinja2
 
-from jmeslog.errors import ValidationError, NoChangesFoundError
 from jmeslog import model
-from jmeslog.constants import VALID_CHARS, DEFAULT_TEMPLATE
+from jmeslog.constants import DEFAULT_TEMPLATE, VALID_CHARS
+from jmeslog.errors import NoChangesFoundError, ValidationError
 
 
 class EditorRetriever:
