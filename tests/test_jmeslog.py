@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from dataclasses import dataclass
 from typing import Optional
 from unittest import mock
@@ -354,3 +355,10 @@ def test_can_set_explicit_version(tmpdir):
     jmeslog.cli.cmd_new_change(new_change_args)
     jmeslog.cli.cmd_new_release(args)
     assert os.listdir(change_dir)[0] == '1.2.3.json'
+
+
+def test_can_get_version(capsys):
+    with pytest.raises(SystemExit):
+        jmeslog.cli.main(['--version'])
+    version = capsys.readouterr().out
+    assert re.search(r'\d+\.\d+\.\d+', version) is not None
