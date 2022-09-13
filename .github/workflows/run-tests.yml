@@ -35,4 +35,4 @@ jobs:
           python -m pip install poetry
           poetry install
       - name: Run prcheck
-        run: poetry run prcheck
+        run: poetry run poe prcheck
