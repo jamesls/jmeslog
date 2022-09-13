@@ -1,13 +1,14 @@
 import argparse
 import os
 import sys
-import typing
+from importlib import metadata
+from typing import Callable, Optional
 
 from jmeslog import core, model
 from jmeslog.constants import DEFAULT_RENDER_TEMPLATE
 from jmeslog.errors import NoChangesFoundError, ValidationError
 
-SUB_CMD_FUNC = typing.Callable[[argparse.Namespace], int]
+SUB_CMD_FUNC = Callable[[argparse.Namespace], int]
 
 
 def cmd_new_release(args: argparse.Namespace) -> int:
@@ -99,6 +100,9 @@ def cmd_pending(args: argparse.Namespace) -> int:
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        '--version', action='version', version=metadata.version(__package__)
+    )
+    parser.add_argument(
         '--change-dir',
         default='.changes',
         help='The location of the .changes directory.',
@@ -164,11 +168,17 @@ def create_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> int:
+def main(argv: Optional[list[str]] = None) -> int:
     parser = create_parser()
-    args = parser.parse_args()
-    handler: SUB_CMD_FUNC = args.func
-    return handler(args)
+    if argv is None:
+        argv = sys.argv[1:]
+    args = parser.parse_args(argv)
+    if not hasattr(args, 'func'):
+        parser.print_help()
+        return 0
+    else:
+        handler: SUB_CMD_FUNC = args.func
+        return handler(args)
 
 
 if __name__ == '__main__':
