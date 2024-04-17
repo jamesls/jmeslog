@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 import time
 from dataclasses import asdict, fields
-from distutils.version import StrictVersion
+from packaging.version import Version
 from typing import IO, Any, Dict, List
 
 import jinja2
@@ -197,7 +197,7 @@ def find_last_released_version(change_dir: str) -> str:
 def sorted_versioned_releases(change_dir: str) -> List[str]:
     # Strip off the '.json' suffix.
     files = [f[:-5] for f in os.listdir(change_dir) if f.endswith('.json')]
-    return sorted(files, key=lambda x: StrictVersion(x))
+    return sorted(files, key=lambda x: Version(x))
 
 
 def determine_next_version(
