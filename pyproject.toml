@@ -32,12 +32,8 @@ python = ">=3.9.0, <4.0"
 Jinja2 = "^3.1.2"
 packaging = "^24.0"
 
-[tool.poetry.dev-dependencies]
-black = "*"
-flake8 = "*"
-flake8-comprehensions = "*"
-flake8-logging-format = "*"
-isort = "*"
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.3.7"
 mypy = "*"
 pre-commit = "*"
 pytest = "*"
@@ -47,23 +43,17 @@ mkdocs-material = "*"
 pymdown-extensions = "*"
 pytest-github-actions-annotate-failures = "*"
 poethepoet = "*"
-pylint = "*"
+
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.format]
+quote-style = "preserve"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.isort]
-profile = "black"
-line_length = 79
-honor_noqa = true
-src_paths = ["src", "tests"]
-
-[tool.black]
-target-version = ["py39"]
-include = '\.pyi?$'
-line-length = 79
-skip_string_normalization = true
 
 [tool.pytest.ini_options]
 addopts = """\
@@ -96,13 +86,17 @@ exclude = ['tests/']
 
 [tool.poe.tasks]
 pre-commit = "poetry run pre-commit run --all-files"
+check = [
+  { cmd = "poetry run ruff check ." },
+  { cmd = "poetry run ruff format --diff ." },
+  { cmd = "mypy ." },
+]
 test = "poetry run pytest tests/"
 stage-release = "python3 ./scripts/stage-release --output staged-release.zip"
 format-code = [
-  { cmd = "poetry run black ." },
-  { cmd = "poetry run isort ." },
+  { cmd = "poetry run ruff format ." },
 ]
-prcheck = ["pre-commit", "test"]
+prcheck = ["pre-commit", "check", "test"]
 
 [tool.poetry.scripts]
 jmeslog = "jmeslog.cli:main"
