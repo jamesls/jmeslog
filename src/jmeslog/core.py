@@ -6,10 +6,10 @@ import subprocess
 import tempfile
 import time
 from dataclasses import asdict, fields
-from packaging.version import Version
 from typing import IO, Any, Dict, List
 
 import jinja2
+from packaging.version import Version
 
 from jmeslog import model
 from jmeslog.constants import DEFAULT_TEMPLATE, VALID_CHARS
