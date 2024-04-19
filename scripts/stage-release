@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import os
+from pathlib import Path
 import subprocess
 import tempfile
 import zipfile
@@ -11,22 +12,30 @@ REPO_ROOT = os.path.join(
 
 
 def stage_release(args):
+    output_file: str = str(args.output)
     with tempfile.TemporaryDirectory() as dirname:
         stage_dir = os.path.join(dirname, 'staged-release')
         os.makedirs(stage_dir)
         make_stage_dir(stage_dir)
-        zip_stage_dir(dirname, args.output)
+        zip_stage_dir(dirname, output_file)
 
 
-def make_stage_dir(stage_dir):
-    repos_dir = os.path.join(stage_dir, 'repos')
-    os.makedirs(repos_dir)
+def make_stage_dir(stage_dir: str) -> None:
+    """Create a stage directory and prepare it for a new release.
+
+    This creates a new stage directory, clones the repository (locally),
+    and then generates a new release for the repository, including
+    git tags, version bumps, changelogs, etc.
+
+    """
+    repos_dir = Path(stage_dir) / 'repos'
+    repos_dir.mkdir(parents=True, exist_ok=True)
     subprocess.run(
         ['git', 'clone', REPO_ROOT],
         cwd=repos_dir,
         check=True,
     )
-    single_repo_dir = os.path.join(repos_dir, os.listdir(repos_dir)[0])
+    single_repo_dir = repos_dir / next(repos_dir.iterdir())
     next_release_type = subprocess.run(
         ['jmeslog', 'query', 'next-release-type'],
         cwd=single_repo_dir,
@@ -52,7 +61,8 @@ def make_stage_dir(stage_dir):
         cwd=single_repo_dir,
         check=True,
     )
-    with open('CHANGELOG.md', 'w') as f:
+    changelog_path = single_repo_dir / 'CHANGELOG.md'
+    with changelog_path.open('w') as f:
         subprocess.run(
             ['jmeslog', 'render', '--template', 'CHANGELOG'],
             cwd=single_repo_dir,
@@ -84,7 +94,7 @@ def make_stage_dir(stage_dir):
     subprocess.run(['poetry', 'build'], cwd=single_repo_dir, check=True)
 
 
-def zip_stage_dir(dirname, outfile):
+def zip_stage_dir(dirname: str, outfile: str):
     with zipfile.ZipFile(
         outfile, mode='w', compression=zipfile.ZIP_DEFLATED
     ) as z:
