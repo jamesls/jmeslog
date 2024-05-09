@@ -38,6 +38,9 @@ jobs:
       run: |
         python -m pip install poetry
         poetry install
+        poetry run pip list
+        poetry run which python
+        ls -la "$(dirname $(poetry run which python))"
     - name: Stage release
       run: |
         python scripts/stage-release -o /tmp/stage.zip
