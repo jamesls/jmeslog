@@ -41,6 +41,8 @@ jobs:
         poetry run pip list
         poetry run which python
         ls -la "$(dirname $(poetry run which python))"
+    - name: Add Poetry Scripts to PATH
+      run: echo "$(dirname $(poetry run which python))" >> $GITHUB_PATH
     - name: Stage release
       run: |
         python scripts/stage-release -o /tmp/stage.zip
