@@ -15,11 +15,10 @@ jobs:
       id-token: write
       contents: write
     steps:
-    - uses: actions/checkout@v4
     - uses: actions/download-artifact@v4
       with:
         name: staged-release-${{ github.event.inputs.run_id }}
-        path: /tmp/stagedir
+        path: stagedir
         github-token: ${{ secrets.GH_REPO_TOKEN }}
         run-id: ${{ github.event.inputs.run_id }}
     - name: Setup Python
@@ -31,27 +30,25 @@ jobs:
         git config --global user.name "GitHub Action"
         git config --global user.email "github-actions-bot@users.noreply.github.com"
         AUTH_TOKEN=$(echo -n "x-access-token:$GITHUB_TOKEN" | base64)
-        unzip /tmp/stagedir/stage.zip -d /tmp/
-        cd /tmp/staged-release/repos/jmeslog
-        git config --global --add safe.directory /tmp/staged-release/repos/jmeslog
+        unzip stagedir/stage.zip -d .
+        cd staged-release/repos/jmeslog
+        git config --global --add safe.directory staged-release/repos/jmeslog
         echo "Configuring git remote"
         git remote add upstream https://github.com/jamesls/jmeslog
         /usr/bin/git config --local --name-only --get-regexp "http\.https\:\/\/github\.com\/\.extraheader" && git config --local --unset-all 'http.https://github.com/.extraheader' || :
         /usr/bin/git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic ${AUTH_TOKEN}"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #    - name: Publish to GitHub
-      #      run: |
-      #        cd /tmp/staged-release/repos/jmeslog
-      #        echo Pushing changes to GitHub
-      #        git push --tags upstream master
-      #        echo Pushed changes to GitHub
-      #      env:
-      #        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Publish to GitHub
+      run: |
+        cd staged-release/repos/jmeslog
+        echo Pushing changes to GitHub
+        git push --tags upstream master
+        echo Pushed changes to GitHub
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Publish
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         verbose: true
-        packages-dir: /tmp/staged-release/repos/jmeslog/dist
-      env:
-        DEBUG: true
+        packages-dir: staged-release/repos/jmeslog/dist
