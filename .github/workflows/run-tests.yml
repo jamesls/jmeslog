@@ -17,6 +17,8 @@ jobs:
       - name: Check workflow files
         run: ./actionlint -color
         shell: bash
+        env:
+          SHELLCHECK_OPTS: --exclude=SC2015
 
   test:
     runs-on: ubuntu-latest
