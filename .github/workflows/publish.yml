@@ -40,15 +40,18 @@ jobs:
         /usr/bin/git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic ${AUTH_TOKEN}"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Publish to GitHub
-      run: |
-        cd /tmp/staged-release/repos/jmeslog
-        echo Pushing changes to GitHub
-        git push --tags upstream master
-        echo Pushed changes to GitHub
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #    - name: Publish to GitHub
+      #      run: |
+      #        cd /tmp/staged-release/repos/jmeslog
+      #        echo Pushing changes to GitHub
+      #        git push --tags upstream master
+      #        echo Pushed changes to GitHub
+      #      env:
+      #        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Publish
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
-        packages-dir: /tmp/staged-release/repos/jmeslog/dist/
+        verbose: true
+        packages-dir: /tmp/staged-release/repos/jmeslog/dist
+      env:
+        DEBUG: true
