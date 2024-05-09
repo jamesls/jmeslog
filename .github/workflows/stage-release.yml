@@ -38,12 +38,21 @@ jobs:
       run: |
         python -m pip install poetry
         poetry install
+        poetry run pip list
+        poetry run which python
+        ls -la "$(dirname $(poetry run which python))"
+    - name: Add Poetry Scripts to PATH
+      run: echo "$(dirname $(poetry run which python))" >> $GITHUB_PATH
+    - name: Configure Git Identity
+      run: |
+          git config --global user.name "Github Action"
+          git config --global user.email "github-actions-bot@users.noreply.github.com"
     - name: Stage release
       run: |
         python scripts/stage-release -o /tmp/stage.zip
         unzip /tmp/stage.zip
     - name: Set stage checksum
-      run: echo "STAGE_CHECKSUM=$(md5 -q /tmp/stage.zip)" >> $GITHUB_ENV
+      run: echo "STAGE_CHECKSUM=$(md5sum /tmp/stage.zip | awk '{print $1}')" >> $GITHUB_ENV
     - uses: actions/upload-artifact@v4
       with:
         name: staged-release-${{ env.STAGE_CHECKSUM }}
