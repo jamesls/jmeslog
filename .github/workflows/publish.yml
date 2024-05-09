@@ -1,0 +1,35 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      checksum:
+        description: "Checksum of staged release"
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/download-artifact@v4
+      with:
+        name: staged-release-${{ github.event.inputs.checksum }}
+        path: /tmp/stage.zip
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Prepare stage for publish
+      run: |
+          git config --global user.name "Github Action"
+          git config --global user.email "github-actions-bot@users.noreply.github.com"
+          unzip /tmp/stage.zip
+          ls -larth /tmp/stage/
+#    - name: Publish
+#      uses: pypa/gh-action-pypi-publish@release/v1
+#      with:
+#        packages-dir: /tmp/staged-release/repos/jmeslog/dist/
