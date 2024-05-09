@@ -1,0 +1,56 @@
+name: Stage Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install poetry
+        poetry install
+    - name: Run prcheck
+      run: |
+        poetry run poe prcheck
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [test]
+    environment: release
+    permissions:
+      id-token: write
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Install dependencies
+      run: |
+        python -m pip install poetry
+        poetry install
+    - name: Stage release
+      run: |
+        python scripts/stage-release -o /tmp/stage.zip
+        unzip /tmp/stage.zip
+    - name: Set stage checksum
+      run: echo "STAGE_CHECKSUM=$(md5 -q /tmp/stage.zip)" >> $GITHUB_ENV
+    - uses: actions/upload-artifact@v4
+      with:
+        name: staged-release-${{ env.STAGE_CHECKSUM }}
+        path: /tmp/stage.zip
+        retention-days: 14
+#    - name: Publish
+#      uses: pypa/gh-action-pypi-publish@release/v1
+#      with:
+#        packages-dir: /tmp/staged-release/repos/jmeslog/dist/
