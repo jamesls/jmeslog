@@ -1,5 +1,0 @@
-{
-  "type": "bugfix",
-  "category": "deprecated dependency",
-  "description": "remove distutils and use packaging instead"
-}

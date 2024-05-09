@@ -1,5 +1,0 @@
-{
-  "type": "bugfix",
-  "category": "NewRelease",
-  "description": "Honor release version number override when creating a new release (#9)"
-}

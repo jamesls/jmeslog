@@ -1,0 +1,25 @@
+{
+  "schema-version": "0.2",
+  "changes": [
+    {
+      "type": "bugfix",
+      "category": "deprecated dependency",
+      "description": "remove distutils and use packaging instead"
+    },
+    {
+      "type": "feature",
+      "category": "old-format",
+      "description": "Add support for loading old jmeslog formats."
+    },
+    {
+      "type": "bugfix",
+      "category": "NewRelease",
+      "description": "Honor release version number override when creating a new release (#9)"
+    },
+    {
+      "type": "feature",
+      "category": "template",
+      "description": "Add support for providing a template to customize the rendering process."
+    }
+  ]
+}
