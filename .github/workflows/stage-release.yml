@@ -43,6 +43,10 @@ jobs:
         ls -la "$(dirname $(poetry run which python))"
     - name: Add Poetry Scripts to PATH
       run: echo "$(dirname $(poetry run which python))" >> $GITHUB_PATH
+    - name: Configure Git Identity
+      run: |
+          git config --global user.name "Github Action"
+          git config --global user.email "github-actions-bot@users.noreply.github.com"
     - name: Stage release
       run: |
         python scripts/stage-release -o /tmp/stage.zip
