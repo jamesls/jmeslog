@@ -22,12 +22,9 @@ jobs:
     - name: Run prcheck
       run: |
         poetry run poe prcheck
-  deploy:
+  stage:
     runs-on: ubuntu-latest
     needs: [test]
-    environment: release
-    permissions:
-      id-token: write
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python
@@ -38,11 +35,8 @@ jobs:
       run: |
         python -m pip install poetry
         poetry install
-        poetry run pip list
-        poetry run which python
-        ls -la "$(dirname $(poetry run which python))"
     - name: Add Poetry Scripts to PATH
-      run: echo "$(dirname $(poetry run which python))" >> $GITHUB_PATH
+      run: dirname "$(poetry run which python)" >> "$GITHUB_PATH"
     - name: Configure Git Identity
       run: |
           git config --global user.name "Github Action"
@@ -51,14 +45,8 @@ jobs:
       run: |
         python scripts/stage-release -o /tmp/stage.zip
         unzip /tmp/stage.zip
-    - name: Set stage checksum
-      run: echo "STAGE_CHECKSUM=$(md5sum /tmp/stage.zip | awk '{print $1}')" >> $GITHUB_ENV
     - uses: actions/upload-artifact@v4
       with:
-        name: staged-release-${{ env.STAGE_CHECKSUM }}
+        name: staged-release-${{ github.run_id }}
         path: /tmp/stage.zip
         retention-days: 14
-#    - name: Publish
-#      uses: pypa/gh-action-pypi-publish@release/v1
-#      with:
-#        packages-dir: /tmp/staged-release/repos/jmeslog/dist/
