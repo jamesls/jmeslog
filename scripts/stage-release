@@ -1,26 +1,23 @@
 #!/usr/bin/env python3
 import argparse
 import os
-from pathlib import Path
 import subprocess
 import tempfile
 import zipfile
+from pathlib import Path
 
-REPO_ROOT = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
-def stage_release(args):
-    output_file: str = str(args.output)
+def stage_release(output_file: Path) -> None:
     with tempfile.TemporaryDirectory() as dirname:
-        stage_dir = os.path.join(dirname, 'staged-release')
-        os.makedirs(stage_dir)
+        stage_dir = Path(dirname) / 'staged-release'
+        stage_dir.mkdir()
         make_stage_dir(stage_dir)
-        zip_stage_dir(dirname, output_file)
+        zip_stage_dir(Path(dirname), output_file)
 
 
-def make_stage_dir(stage_dir: str) -> None:
+def make_stage_dir(stage_dir: Path) -> None:
     """Create a stage directory and prepare it for a new release.
 
     This creates a new stage directory, clones the repository (locally),
@@ -31,7 +28,7 @@ def make_stage_dir(stage_dir: str) -> None:
     repos_dir = Path(stage_dir) / 'repos'
     repos_dir.mkdir(parents=True, exist_ok=True)
     subprocess.run(
-        ['git', 'clone', REPO_ROOT],
+        ['git', 'clone', str(REPO_ROOT)],
         cwd=repos_dir,
         check=True,
     )
@@ -43,14 +40,14 @@ def make_stage_dir(stage_dir: str) -> None:
         check=True,
         encoding='utf-8',
     ).stdout.strip()
-    # Bump the version in the pyproject.toml config.
+    # Bump the version in pyproject.toml and uv.lock.
     subprocess.run(
-        ['poetry', 'version', next_release_type],
+        ['uv', 'version', '--bump', next_release_type],
         cwd=single_repo_dir,
         check=True,
     )
     new_version = subprocess.run(
-        ['poetry', 'version', '--short'],
+        ['uv', 'version', '--short'],
         capture_output=True,
         encoding='utf-8',
         check=True,
@@ -91,23 +88,22 @@ def make_stage_dir(stage_dir: str) -> None:
         check=True,
         cwd=single_repo_dir,
     )
-    subprocess.run(['poetry', 'build'], cwd=single_repo_dir, check=True)
+    subprocess.run(['uv', 'build'], cwd=single_repo_dir, check=True)
 
 
-def zip_stage_dir(dirname: str, outfile: str):
+def zip_stage_dir(dirname: Path, outfile: Path) -> None:
     with zipfile.ZipFile(
         outfile, mode='w', compression=zipfile.ZIP_DEFLATED
     ) as z:
         for root, _, filenames in os.walk(dirname):
             for filename in filenames:
-                full_path = os.path.join(root, filename)
-                prefix_len = len(dirname) + 1
-                relative_path = full_path[prefix_len:]
+                full_path = Path(root) / filename
+                relative_path = full_path.relative_to(dirname)
                 z.write(full_path, relative_path)
     print(f"Zipfile written to: {outfile}")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-o',
@@ -116,7 +112,7 @@ def main():
         help='Filename of staged zip file.',
     )
     args = parser.parse_args()
-    stage_release(args)
+    stage_release(Path(args.output))
 
 
 if __name__ == '__main__':

@@ -1,8 +1,8 @@
 import argparse
 import os
 import sys
+from collections.abc import Callable
 from importlib import metadata
-from typing import Callable, Optional
 
 from jmeslog import core, model
 from jmeslog.constants import DEFAULT_RENDER_TEMPLATE
@@ -100,7 +100,7 @@ def cmd_pending(args: argparse.Namespace) -> int:
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--version', action='version', version=metadata.version(__package__)
+        '--version', action='version', version=metadata.version('jmeslog')
     )
     parser.add_argument(
         '--change-dir',
@@ -141,7 +141,7 @@ def create_parser() -> argparse.ArgumentParser:
         '-d',
         '--description',
         dest='description',
-        help=("Provide additional release notes for this " "release."),
+        help=("Provide additional release notes for this release."),
     )
 
     render = subparser.add_parser('render')
@@ -168,7 +168,7 @@ def create_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Optional[list[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = create_parser()
     if argv is None:
         argv = sys.argv[1:]

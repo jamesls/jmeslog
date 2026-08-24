@@ -1,8 +1,8 @@
 check:
-	flake8 jmeslog
-	python -m mypy --disallow-untyped-defs --strict-optional --warn-no-return jmeslog
+	uv run poe check
 
 coverage:
-	py.test --cov jmeslog --cov-report term-missing ./tests
+	uv run poe test
 
-prcheck: check coverage
+prcheck:
+	uv run poe prcheck

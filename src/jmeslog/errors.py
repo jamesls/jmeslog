@@ -1,8 +1,5 @@
-from typing import List
-
-
 class ValidationError(Exception):
-    def __init__(self, errors: List[str]) -> None:
+    def __init__(self, errors: list[str]) -> None:
         self.errors = errors
 
     def __str__(self) -> str:
