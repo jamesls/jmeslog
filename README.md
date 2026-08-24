@@ -212,54 +212,27 @@ that come up:
 
 # Development
 
-This project requires at Python 3.9+ and uses
-[Poetry](https://python-poetry.org/) to manage dependencies.
+This project supports Python 3.12 through 3.14 and uses
+[uv](https://docs.astral.sh/uv/) to manage dependencies.
 
-Once you've created and activated your virtual environment, run:
+To create the virtual environment and install all dependencies, run:
 
 ```sh
-poetry install
+uv sync --locked --all-extras --dev
 ```
 
-This will install all necessary dependencies and install this project
-in editable mode.
+This installs all necessary dependencies and the project in editable mode.
 
 
 ## Testing
 
 [Poe the Poet](https://github.com/nat-n/poethepoet) is the task runner
-used for this project, it's automatically installed as part of the
-`poetry install` step.  To see a list of available tasks, run the
-`poe` command with no args.
+used for this project. It is installed by `uv sync`. To see a list of
+available tasks, run `uv run poe` with no arguments.
 
 To run the tests for this project run:
 
 
 ```sh
-poe test
-```
-
-## Pre-commit
-
-[Pre-commit](https://pre-commit.com/) hooks runs misc. auto-formatters and
-quality checks to ensure all changes look good before committing.  The same
-changes are also run on Pull Requests so this helps provides a quicker feedback
-loop before submitting a PR.
-
-You can install the hooks with (runs for each commit):
-
-```sh
-pre-commit install
-```
-
-Or if you want e.g. want to run all checks manually for all files:
-
-```
-poe pre-commit
-```
-
-Or if you run to the `pre-commit` executable directly:
-
-```sh
-pre-commit run --all-files
+uv run poe test
 ```

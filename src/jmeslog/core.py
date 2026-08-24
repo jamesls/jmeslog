@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 import time
 from dataclasses import asdict, fields
-from typing import IO, Any, Dict, List
+from typing import IO, Any
 
 import jinja2
 from packaging.version import Version
@@ -123,8 +123,8 @@ class EntryFileWriter:
     def _random_filename(self, next_release: str, filename: str) -> str:
         return os.path.join(
             next_release,
-            '%s-%s-%s.json'
-            % (time.monotonic_ns(), filename, str(random.randint(1, 100000))),
+            f'{time.monotonic_ns()}-{filename}-'
+            f'{random.randint(1, 100000)}.json',
         )
 
 
@@ -194,7 +194,7 @@ def find_last_released_version(change_dir: str) -> str:
     return '0.0.0'
 
 
-def sorted_versioned_releases(change_dir: str) -> List[str]:
+def sorted_versioned_releases(change_dir: str) -> list[str]:
     # Strip off the '.json' suffix.
     files = [f[:-5] for f in os.listdir(change_dir) if f.endswith('.json')]
     return sorted(files, key=lambda x: Version(x))
@@ -249,7 +249,7 @@ def create_entry_recorder(
 
 
 def render_changes(
-    changes: Dict[str, model.JMESLogEntryCollection],
+    changes: dict[str, model.JMESLogEntryCollection],
     out: IO[str],
     template_contents: str,
 ) -> None:
@@ -263,7 +263,7 @@ def render_changes(
 
 def load_all_changes(
     change_dir: str,
-) -> Dict[str, model.JMESLogEntryCollection]:
+) -> dict[str, model.JMESLogEntryCollection]:
     releases = {}
     for version_number in sorted_versioned_releases(change_dir):
         filename = os.path.join(change_dir, f'{version_number}.json')

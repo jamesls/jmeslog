@@ -2,7 +2,6 @@ import json
 import os
 import re
 from dataclasses import dataclass
-from typing import Optional
 from unittest import mock
 
 import pytest
@@ -16,8 +15,8 @@ from jmeslog import model
 
 @dataclass
 class CommandArgs:
-    change_dir: Optional[str] = None
-    release_version: Optional[str] = None
+    change_dir: str | None = None
+    release_version: str | None = None
 
 
 @dataclass
@@ -25,7 +24,7 @@ class NewChangeArgs:
     type: str
     category: str
     description: str
-    change_dir: Optional[str] = None
+    change_dir: str | None = None
 
 
 def new_change(change_type, category='foo', description='bar'):

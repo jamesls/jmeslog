@@ -1,16 +1,12 @@
-[tool.poetry]
+[project]
 name = "jmeslog"
 version = "0.2.0"
 description = "Tool for managing changelogs"
 authors = [
-    "James Saryerwinnie <js@jamesls.com>",
+  { name = "James Saryerwinnie", email = "js@jamesls.com" },
 ]
 license = "Apache-2.0"
 readme = "README.md"
-
-documentation = "https://jamesls.github.io/jmeslog"
-homepage = "https://jamesls.github.io/jmeslog"
-repository = "https://github.com/jamesls/jmeslog"
 
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -18,42 +14,64 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: Software Development :: Libraries :: Python Modules",
   "Typing :: Typed",
 ]
-
-packages = [
-    { include = "jmeslog", from = "src" }
+requires-python = ">=3.12.0,<3.15.0"
+dependencies = [
+  "jinja2>=3.1.6",
+  "packaging>=24.0",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.9.0, <4.0"
-Jinja2 = "^3.1.4"
-packaging = "^24.0"
+[project.urls]
+Documentation = "https://jamesls.github.io/jmeslog"
+Homepage = "https://jamesls.github.io/jmeslog"
+Repository = "https://github.com/jamesls/jmeslog"
+Issues = "https://github.com/jamesls/jmeslog/issues"
+Changelog = "https://github.com/jamesls/jmeslog/blob/master/CHANGELOG.md"
 
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.3.7"
-mypy = "*"
-pre-commit = "*"
-pytest = "*"
-pytest-cov = "*"
-mkdocstrings = "*"
-mkdocs-material = "*"
-pymdown-extensions = "*"
-pytest-github-actions-annotate-failures = "*"
-poethepoet = "*"
+[project.scripts]
+jmeslog = "jmeslog.cli:main"
+
+[dependency-groups]
+dev = [
+  "mkdocs-material>=9.6.20",
+  "mkdocstrings>=0.30.0",
+  "poethepoet>=0.37.0",
+  "pymdown-extensions>=10.16.1",
+  "pyright[nodejs]>=1.1.405",
+  "pytest>=8.4.2",
+  "pytest-cov>=7.0.0",
+  "pytest-github-actions-annotate-failures>=0.3.0",
+  "ruff>=0.16.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  ".cruft.json",
+  ".github",
+  "scripts",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jmeslog"]
 
 [tool.ruff]
 line-length = 79
 
+[tool.ruff.lint]
+extend-select = ["E501"]
+
 [tool.ruff.format]
 quote-style = "preserve"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
+preview = true
 
 [tool.pytest.ini_options]
 addopts = """\
@@ -63,40 +81,46 @@ addopts = """\
     --no-cov-on-fail \
 """
 
+[tool.coverage.run]
+branch = true
+source = ["src/"]
+
 [tool.coverage.report]
-# Bump this up as we add coverage
+# Bump this up as we add coverage.
 fail_under = 77
 exclude_lines = [
-    'if TYPE_CHECKING:',
-    'pragma: no cover'
+  "if TYPE_CHECKING:",
+  "pragma: no cover",
+  "raise NotImplementedError",
+]
+exclude_also = [
+  "def .*: \\.\\.\\.$",
 ]
 
-[tool.mypy]
-disallow_any_unimported = true
-disallow_untyped_defs = true
-no_implicit_optional = true
-strict_equality = true
-warn_unused_ignores = true
-warn_redundant_casts = true
-warn_return_any = true
-check_untyped_defs = true
-show_error_codes = true
-exclude = ['tests/']
+[tool.pyright]
+include = ["src", "scripts"]
+exclude = ["**/__pycache__"]
 
+reportMissingImports = true
+reportMissingTypeStubs = false
+
+pythonVersion = "3.12"
+pythonPlatform = "All"
 
 [tool.poe.tasks]
-pre-commit = "poetry run pre-commit run --all-files"
 check = [
-  { cmd = "poetry run ruff check ." },
-  { cmd = "poetry run ruff format --diff ." },
-  { cmd = "mypy ." },
+  { cmd = "uv run ruff check ." },
+  { cmd = "uv run ruff format --diff ." },
+  { cmd = "uv run pyright" },
 ]
-test = "poetry run pytest tests/"
-stage-release = "python3 ./scripts/stage-release --output staged-release.zip"
+test = "uv run pytest tests/"
+stage-release = "uv run python ./scripts/stage-release --output staged-release.zip"
 format-code = [
-  { cmd = "poetry run ruff format ." },
+  { cmd = "uv run ruff format ." },
 ]
-prcheck = ["pre-commit", "check", "test"]
-
-[tool.poetry.scripts]
-jmeslog = "jmeslog.cli:main"
+auto-check = [
+  { cmd = "uv run ruff check --fix ." },
+  { cmd = "uv run ruff format ." },
+  { cmd = "uv run pyright" },
+]
+prcheck = ["check", "test"]

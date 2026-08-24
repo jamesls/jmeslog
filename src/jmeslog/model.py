@@ -1,7 +1,7 @@
 import enum
 import json
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, Union
+from typing import Any
 
 
 class VersionBump(enum.Enum):
@@ -12,11 +12,11 @@ class VersionBump(enum.Enum):
 
 @dataclass
 class EntrySchema:
-    type: List[str] = field(
+    type: list[str] = field(
         default_factory=lambda: ['feature', 'bugfix', 'enhancement']
     )
     # An empty list means any string is valid.
-    category: List[str] = field(default_factory=lambda: [])
+    category: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -33,7 +33,7 @@ class JMESLogEntry:
         entry_dict = self.to_dict()
         return json.dumps(entry_dict, indent=2)
 
-    def to_dict(self) -> Dict[str, str]:
+    def to_dict(self) -> dict[str, str]:
         return asdict(self)
 
     def is_completed(self) -> bool:
@@ -46,7 +46,7 @@ class JMESLogEntry:
 
 @dataclass
 class JMESLogEntryCollection:
-    changes: List[JMESLogEntry]
+    changes: list[JMESLogEntry]
     schema_version: str = '0.2'
     summary: str = ''
 
@@ -60,7 +60,7 @@ class JMESLogEntryCollection:
                 bump_type = VersionBump.MINOR_VERSION
         return bump_type
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = {
             'schema-version': self.schema_version,
             'changes': [entry.to_dict() for entry in self.changes],
@@ -71,7 +71,7 @@ class JMESLogEntryCollection:
 
     @classmethod
     def from_dict(
-        cls, release_info: Union[List[Any], Dict[str, Any]]
+        cls, release_info: list[Any] | dict[str, Any]
     ) -> 'JMESLogEntryCollection':
         if isinstance(release_info, list):
             return cls._load_old_format(release_info)
@@ -79,7 +79,7 @@ class JMESLogEntryCollection:
 
     @classmethod
     def _load_old_format(
-        cls, release_info: List[Any]
+        cls, release_info: list[Any]
     ) -> 'JMESLogEntryCollection':
         collection = cls(
             schema_version=cls._OLD_SCHEMA_VERSION,
@@ -89,7 +89,7 @@ class JMESLogEntryCollection:
 
     @classmethod
     def _load_new_format(
-        cls, release_info: Dict[str, Any]
+        cls, release_info: dict[str, Any]
     ) -> 'JMESLogEntryCollection':
         collection = cls(
             schema_version=release_info['schema-version'],
